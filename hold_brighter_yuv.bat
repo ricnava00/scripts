@@ -1,0 +1,2 @@
+:: Compares each frame with next one, and if the drop in each channel is more than the threshold (8) keeps the old value
+ffmpeg -hwaccel cuda -hwaccel_output_format cuda -hide_banner -y -stream_loop 0 -i in.mp4 -c:a copy -filter_complex "hwdownload,format=nv12,format=yuv420p,tblend=c0_expr=clip((B-8-A)/4\,0\,1)*B+(1-clip((B-8-A)/4\,0\,1))*A:c1_expr=clip((A-8-B)/4\,0\,1)*A+(1-clip((A-8-B)/4\,0\,1))*B:c2_expr=clip((B-8-A)/4\,0\,1)*B+(1-clip((B-8-A)/4\,0\,1))*A" -c:v av1_nvenc -cq 30 -preset p7 -tune hq out.mp4

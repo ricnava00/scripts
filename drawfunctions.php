@@ -1,0 +1,71 @@
+<?php
+$aarange=0;
+$w=2048+1;
+$h=2048+1;
+$size=0.5;
+$scale=256;
+$outfile="png.png";
+$imagick=new Imagick();
+$imagick->newImage($w,$h,"transparent");
+$imageIterator=$imagick->getPixelIterator();
+$functions=array("(x-1)**2+y**2>4||(x+1)**2+y**2>4","(x-1)**2+y**2<4||(x+1)**2+y**2<4");
+foreach($functions as &$function)
+{
+	$function="return ".str_replace(array("x","y"),array('$x','$y'),$function).";";
+}
+unset($function);
+for($x=-1*($w-1)/2/$scale;$x<=($w-1)/2/$scale;$x=$x+1/$scale)
+{
+	for($y=($h-1)/2/$scale;$y>=-1*($h-1)/2/$scale;$y=$y-1/$scale)
+	{
+		$ok=true;
+		foreach($functions as $function)
+		{
+			$ok=$ok&&eval($function);
+			if(!$ok)
+			{
+				break;
+			}
+		}
+		$pixellist[(($h-1)/2-$y*$scale)*$w+$x*$scale+($w-1)/2]=$ok;
+	}
+}
+foreach($imageIterator as $r=>$pixels)
+{
+	foreach($pixels as $c=>$pixel)
+	{
+		$ok=0;
+		if($pixellist[$r*$w+$c]==0)
+		{
+			for($n=-1*$aarange;$n<=$aarange;$n++)
+			{
+				for($m=-1*$aarange;$m<=$aarange;$m++)
+				{
+					if($c+$m<$w&&$c+$m>=0)
+					{
+						if(isset($pixellist[($r+$n)*$w+($c+$m)])&&($pixellist[($r+$n)*$w+($c+$m)]=="1"||$pixellist[($r+$n)*$w+($c+$m)]=="FFFFFF"))
+						{
+							$ok++;
+						}
+					}
+				}
+			}
+			$num=sqrt($ok/($aarange*2+1)**2)*1.5;
+			if($num>1)
+			{
+				$num=1-1/PHP_INT_MAX;
+			}
+			$str=str_pad(dechex($num*hexdec("ff")),2,"0",STR_PAD_LEFT);
+			$pixellist[$r*$w+$c]=$str.$str.$str;
+		}
+		else
+		{
+			$pixellist[$r*$w+$c]="FFFFFF";
+		}
+		$pixel->setColor("#".$pixellist[$r*$w+$c]);
+	}
+	$imageIterator->syncIterator();
+}
+$imagick->resizeImage($w*$size,$h*$size,imagick::FILTER_SINC,1);
+$imagick->writeImage($outfile);
+?>

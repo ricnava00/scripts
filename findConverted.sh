@@ -1,0 +1,1 @@
+newbitrates | grep -P "Convert|@ref" | grep -zoP "@ref.*\n\"Comment\": \"Convert" | grep -a "@ref" | sed 's/.*@ref": ".\///' | sed 's/",$//'
